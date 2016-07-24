@@ -1,35 +1,70 @@
 #!/usr/bin/env python
-# encoding:utf-8
-
+# encoding: utf-8
 '''
-Created on 2016年7月19日
+monitor.collector -- shortdesc
 
-@author: my
+monitor.collector is a description
+
+It defines classes_and_methods
+
+@author:     Yi
+
+@copyright:  2016 MY. All rights reserved.
 '''
 
 import os
-from  pyinotify import  WatchManager, Notifier, ProcessEvent, IN_DELETE, IN_CREATE, IN_MODIFY
-class EventHandler(ProcessEvent):
-    """事件处理"""
-    defprocess_IN_CREATE(self, event):
-        print  "Create file: %s " % os.path.join(event.path, event.name)
-    defprocess_IN_DELETE(self, event):
-        print  "Delete file: %s " % os.path.join(event.path, event.name)
-    defprocess_IN_MODIFY(self, event):
-            print   "Modify file: %s " % os.path.join(event.path, event.name)
-def FSMonitor(path='.'):
-        wm = WatchManager() 
-        mask = IN_DELETE | IN_CREATE | IN_MODIFY
-        notifier = Notifier(wm, EventHandler())
-        wm.add_watch(path, mask, rec=True)
-        print'now starting monitor %s' % (path)
-        whileTrue:
-                try:
-                       notifier.process_events()
-                       if notifier.check_events():
-                               notifier.read_events()
-                except KeyboardInterrupt:
-                       notifier.stop()
-                       break
-if __name__ == "__main__":
-    FSMonitor()
+import datetime
+import pyinotify
+import logging
+class MyEventHandler(pyinotify.ProcessEvent):
+    logging.basicConfig(level=logging.INFO, filename='/home/su/git/monitor/logs/monitor.log')
+    # 自定义写入那个文件，可以自己修改
+    logging.info("Starting monitor...")
+     
+    def process_IN_ACCESS(self, event):
+        print "ACCESS event:", event.pathname
+        logging.info("ACCESS event : %s  %s" % (os.path.join(event.path, event.name), datetime.datetime.now()))
+     
+    def process_IN_ATTRIB(self, event):
+        print "ATTRIB event:", event.pathname
+        logging.info("IN_ATTRIB event : %s  %s" % (os.path.join(event.path, event.name), datetime.datetime.now()))
+     
+    def process_IN_CLOSE_NOWRITE(self, event):
+        print "CLOSE_NOWRITE event:", event.pathname
+        logging.info("CLOSE_NOWRITE event : %s  %s" % (os.path.join(event.path, event.name), datetime.datetime.now()))
+      
+    def process_IN_CLOSE_WRITE(self, event):
+        print "CLOSE_WRITE event:", event.pathname
+        logging.info("CLOSE_WRITE event : %s  %s" % (os.path.join(event.path, event.name), datetime.datetime.now()))
+      
+    def process_IN_CREATE(self, event):
+        print "CREATE event:", event.pathname
+        logging.info("CREATE event : %s  %s" % (os.path.join(event.path, event.name), datetime.datetime.now()))
+      
+    def process_IN_DELETE(self, event):
+        print "DELETE event:", event.pathname
+        logging.info("DELETE event : %s  %s" % (os.path.join(event.path, event.name), datetime.datetime.now()))
+      
+    def process_IN_MODIFY(self, event):
+        print "MODIFY event:", event.pathname
+        logging.info("MODIFY event : %s  %s" % (os.path.join(event.path, event.name), datetime.datetime.now()))
+      
+    def process_IN_OPEN(self, event):
+        print "OPEN event:", event.pathname
+        logging.info("OPEN event : %s  %s" % (os.path.join(event.path, event.name), datetime.datetime.now()))
+     
+     
+def main():
+    # watch manager
+    wm = pyinotify.WatchManager()
+    wm.add_watch('/home/su/git/monitor/logs', pyinotify.ALL_EVENTS, rec=True)
+    # /tmp是可以自己修改的监控的目录
+    # event handler
+    eh = MyEventHandler()
+ 
+    # notifier
+    notifier = pyinotify.Notifier(wm, eh)
+    notifier.loop()
+ 
+if __name__ == '__main__':
+    main()

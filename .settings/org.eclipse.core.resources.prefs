@@ -1,6 +1,7 @@
 eclipse.preferences.version=1
 encoding//monitor/__init__.py=utf-8
 encoding//monitor/cli.py=utf-8
+encoding//monitor/collector.py=utf-8
 encoding//monitor/fs.py=utf-8
 encoding//monitor/monitor.py=utf-8
 encoding/setup.py=utf-8
