@@ -12,59 +12,80 @@ It defines classes_and_methods
 @copyright:  2016 MY. All rights reserved.
 '''
 
-import os
-import datetime
-import pyinotify
-import logging
+import os ,pyinotify, logging, pwd, hashlib, io, time
+from client import Syslog
+
 class MyEventHandler(pyinotify.ProcessEvent):
-    logging.basicConfig(level=logging.INFO, filename='/home/su/git/monitor/logs/monitor.log')
-    # 自定义写入那个文件，可以自己修改
-    logging.info("Starting monitor...")
-     
-    def process_IN_ACCESS(self, event):
-        print "ACCESS event:", event.pathname
-        logging.info("ACCESS event : %s  %s" % (os.path.join(event.path, event.name), datetime.datetime.now()))
-     
-    def process_IN_ATTRIB(self, event):
-        print "ATTRIB event:", event.pathname
-        logging.info("IN_ATTRIB event : %s  %s" % (os.path.join(event.path, event.name), datetime.datetime.now()))
-     
-    def process_IN_CLOSE_NOWRITE(self, event):
-        print "CLOSE_NOWRITE event:", event.pathname
-        logging.info("CLOSE_NOWRITE event : %s  %s" % (os.path.join(event.path, event.name), datetime.datetime.now()))
-      
-    def process_IN_CLOSE_WRITE(self, event):
-        print "CLOSE_WRITE event:", event.pathname
-        logging.info("CLOSE_WRITE event : %s  %s" % (os.path.join(event.path, event.name), datetime.datetime.now()))
-      
+    WHO = 'linux_fs'
+    
+    def __init__(self, ip, port):
+        logging.info("linux file system monitor starting ...")
+        self.syslog = Syslog(ip, port)
+    
     def process_IN_CREATE(self, event):
-        print "CREATE event:", event.pathname
-        logging.info("CREATE event : %s  %s" % (os.path.join(event.path, event.name), datetime.datetime.now()))
+        if event.dir:
+            return
+        file1_path = event.pathname
+        stat_info = os.stat(file1_path)
+        uid = stat_info.st_uid
+        process = ""
+        exec_user = pwd.getpwuid(uid)[0]
+        ori_user = pwd.getpwuid(uid)[0]
+        md5_value = md5(file1_path)
+    
+        log = "create %s %s %s %s %s" % (event.pathname, process, exec_user, ori_user, md5_value)
+        self.syslog.send(MyEventHandler.WHO, log)
       
     def process_IN_DELETE(self, event):
-        print "DELETE event:", event.pathname
-        logging.info("DELETE event : %s  %s" % (os.path.join(event.path, event.name), datetime.datetime.now()))
+        if event.dir:
+            return
+        process = ""
+        exec_user = ""
+        ori_user = ""
+        md5_value = ""
+        
+        log = "delete %s %s %s %s %s" % (event.pathname, process, exec_user, ori_user, md5_value)
+        self.syslog.send(MyEventHandler.WHO, log)
       
     def process_IN_MODIFY(self, event):
-        print "MODIFY event:", event.pathname
-        logging.info("MODIFY event : %s  %s" % (os.path.join(event.path, event.name), datetime.datetime.now()))
-      
-    def process_IN_OPEN(self, event):
-        print "OPEN event:", event.pathname
-        logging.info("OPEN event : %s  %s" % (os.path.join(event.path, event.name), datetime.datetime.now()))
+        if event.dir:
+            return
+        file1_path = event.pathname
+        stat_info = os.stat(file1_path)
+        uid = stat_info.st_uid
+        process = ""
+        exec_user = pwd.getpwuid(uid)[0]
+        ori_user = pwd.getpwuid(uid)[0]
+        md5_value = md5(file1_path)
+        
+        log = "modification %s %s %s %s %s" % (event.pathname, process, exec_user, ori_user, md5_value)
+        self.syslog.send(MyEventHandler.WHO, log)
      
+def md5(file_path):
+    m = hashlib.md5()
+    file1 = io.FileIO(file_path, 'r')
+    bytes1 = file1.read(1024)
+    while(bytes1 != b''):
+        m.update(bytes1)
+        bytes1 = file1.read(1024)
+    file1.close()
+    
+    return m.hexdigest()
      
 def main():
-    # watch manager
-    wm = pyinotify.WatchManager()
-    wm.add_watch('/home/su/git/monitor/logs', pyinotify.ALL_EVENTS, rec=True)
-    # /tmp是可以自己修改的监控的目录
-    # event handler
-    eh = MyEventHandler()
- 
-    # notifier
-    notifier = pyinotify.Notifier(wm, eh)
-    notifier.loop()
+    try:
+        wm = pyinotify.WatchManager()
+        wm.add_watch('/home/su/git/monitor/test', pyinotify.ALL_EVENTS, rec=True)
+        eh = MyEventHandler()
+     
+        # notifier
+        notifier = pyinotify.Notifier(wm, eh)
+        notifier.loop()
+        
+    except Exception, e:
+        logging.error("linux file system monitor stop: " + str(e.args))
+        time.sleep(10)
+        main()
  
 if __name__ == '__main__':
     main()
