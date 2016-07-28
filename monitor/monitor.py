@@ -11,10 +11,11 @@ It defines classes_and_methods
 
 @copyright:  2016 MY. All rights reserved.
 '''
-import ConfigParser, logging, fs, time
+import ConfigParser, logging, fs, time, ps, threading
+from client import Syslog
 
-logging.basicConfig(level=logging.INFO,
-                    filename='/home/su/git/monitor/logs/monitor.log',
+logging.basicConfig(level=logging.DEBUG,
+                    filename='../logs/monitor.log',
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  
                     datefmt='%d %b %Y %H:%M:%S')
 
@@ -33,22 +34,46 @@ class Config:
         self.sl_ip = cf.get("syslog", "ip")
         self.sl_port = cf.getint("syslog", "port")
         
-def main():
-    config = Config()
-    
+        self.delay = cf.getint("other", "delay")
+        
+def start_fs(config, syslog):
     try:
         wm = fs.pyinotify.WatchManager()
         wm.add_watch(config.fs_path, fs.pyinotify.ALL_EVENTS, rec=True)
-        eh = fs.MyEventHandler(config.sl_ip, config.sl_port)
-     
+        eh = fs.MyEventHandler(syslog)
+         
         # notifier
         notifier = fs.pyinotify.Notifier(wm, eh)
         notifier.loop()
-        
+            
     except Exception, e:
         logging.error("linux file system monitoring stop: " + str(e.args))
         time.sleep(10)
-        main()
+        start_fs(config, syslog)
+        
+def start_ps(config, syslog):
+    try:
+        ps1 = ps.Ps(syslog)
+        ps1.start(config.delay)
+    except Exception, e:
+        logging.error("linux process monitor stop: " + str(e.args))
+        time.sleep(10)
+        start_ps(config, syslog)
+        
+def main():
+    config = Config()
+    syslog = Syslog(config.sl_ip, config.sl_port)
+
+    threads = []
+    t1 = threading.Thread(target=start_ps, args=(config, syslog))
+    t2 = threading.Thread(target=start_fs, args=(config, syslog))
+    threads.append(t1)
+    threads.append(t2)
+
+    for t in threads:
+        t.setDaemon(True)
+        t.start()
+    t.join()
  
 if __name__ == '__main__':
     main()

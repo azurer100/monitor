@@ -13,14 +13,13 @@ It defines classes_and_methods
 '''
 
 import os ,pyinotify, logging, pwd, hashlib, io, time
-from client import Syslog
 
 class MyEventHandler(pyinotify.ProcessEvent):
     WHO = 'linux_fs'
     
-    def __init__(self, ip, port):
+    def __init__(self, syslog):
         logging.info("linux file system monitor starting ...")
-        self.syslog = Syslog(ip, port)
+        self.syslog = syslog
     
     def process_IN_CREATE(self, event):
         if event.dir:

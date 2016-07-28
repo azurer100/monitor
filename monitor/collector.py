@@ -18,14 +18,15 @@ import MySQLdb
 from encode import Encode
 
 logging.basicConfig(level=logging.DEBUG,
-                    filename='/home/su/git/monitor/logs/collector.log',
+                    filename='../logs/collector.log',
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  
                     datefmt='%d %b %Y %H:%M:%S')
 
 bufsize = 1500
 port = 10514
 
-sql_linux_fs = "insert into linux_file_monitor_info(`access_time`,`operator_status`,`operator_path`,`process_name`,`exec_user`,`original_user`,`local_ip`,`file_md5`,`container_oid`,`aciton`,`status`) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+sql_linux_fs = "INSERT INTO linux_file_monitor_info(`access_time`,`operator_status`,`operator_path`,`process_name`,`exec_user`,`original_user`,`local_ip`,`file_md5`,`container_oid`,`aciton`,`status`) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+sql_linux_ps = "INSERT INTO linux_process_monitor_info(`access_time`,`process_status`,`file_path`,`pid`,`process_name`,`ppid`,`parent_process_name`,`exec_user`,`original_user`,`local_ip`,`file_md5`,`aciton`) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
 
 class Config:
     def __init__(self, path = "./collector.ini"):
@@ -69,7 +70,13 @@ def linux_fs(ip, syslog):
     ori_user = items[4]
     file_md5 = items[5]
     return (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), file_path_action, file_name, process_name, exec_user, ori_user, 
-             ip, file_md5, None, '1', None)
+             ip, file_md5, None, "1", None)
+    
+def linux_ps(ip, syslog):
+    items = syslog.split(" ")
+#     access_time, file_path, pid, process_name, ppid, ppname, exec_user, original_user
+    return (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(float(items[1]))), items[0], items[2], items[3], items[4], items[5],
+            items[6], items[7], items[8], ip, "", "1")
     
 def main():
     logging.info("starting collector...")
@@ -110,6 +117,10 @@ def main():
                 if (who == "linux_fs"):
                     param = linux_fs(addr[0], syslog_msg)
                     curs.execute(sql_linux_fs, param)
+                    
+                if (who == "linux_ps"):
+                    param1 = linux_ps(addr[0], syslog_msg)
+                    curs.execute(sql_linux_ps, param1)
                     
                 logging.info("syslog: %s" % syslog_msg)
             except socket.error:
