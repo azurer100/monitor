@@ -16,15 +16,17 @@ from subprocess import Popen
 from subprocess import PIPE
 import logging, time, re, copy
 
-logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 
 class Ps:
     WHO = 'linux_ps'
     WHO_NET = 'linux_net'
+    WHO_CMD = 'linux_cmd'
     
     def __init__(self, syslog):
         logging.info("linux file process monitor starting ...")
         logging.info("linux netstat monitor starting ...")
+        logging.info("linux command monitor starting ...")
         self.__w_infos = {}
         self.__ps_cur = {}
         self.__ps_new = {}
@@ -79,9 +81,9 @@ class Ps:
         
         for add in add_arr:
             if self.__w_infos.has_key(add[6]):
-                add[6] = self.__w_infos.has_key(add[6])
+                ip = self.__w_infos.has_key(add[6])
             else:
-                add[6] = '127.0.0.1'
+                ip = '127.0.0.1'
                 
             access_time = time.time()
             file_path = add[8]
@@ -98,9 +100,9 @@ class Ps:
             self.syslog.send(Ps.WHO, log)
         for d in del_arr:
             if self.__w_infos.has_key(d[6]):
-                d[6] = self.__w_infos.has_key(d[6])
+                ip = self.__w_infos.has_key(d[6])
             else:
-                d[6] = '127.0.0.1'
+                ip = '127.0.0.1'
                 
             access_time = time.time()
             file_path = d[8]
@@ -115,6 +117,28 @@ class Ps:
             
             log = "stop %s %s %s %s %s %s %s %s" % (access_time, file_path, pid, process_name, ppid, ppname, exec_user, original_user)
             self.syslog.send(Ps.WHO, log)
+            
+        for add in add_arr:
+            if add[6].find("pts") == -1:
+                continue
+            if self.__w_infos.has_key(add[6]):
+                ip = self.__w_infos.has_key(add[6])
+            else:
+                ip = '127.0.0.1'
+            
+            access_time = time.time()
+            file_path = add[8]
+            pid = add[1]
+            process_name = add[8]
+            ppid = add[2]
+            if self.__ps_cur.has_key(ppid):
+                ppname = self.__ps_cur[ppid][8]
+            else:
+                ppname = ''
+            exec_user = original_user = add[0]
+            
+            log = "%s %s %s %s %s %s" % (access_time, process_name, "", exec_user, original_user, ip)
+            self.syslog.send(Ps.WHO_CMD, log)
             
     def __do_netstat(self, includes):
         ptn = re.compile("\s+")
@@ -171,6 +195,8 @@ def main():
         ps.start(10)
     except Exception, e:
         logging.error("linux process monitor stop: " + str(e.args))
+        logging.error("linux command monitor stop: " + str(e.args))
+        logging.error("linux networks monitor stop: " + str(e.args))
  
 if __name__ == '__main__':
     main()
