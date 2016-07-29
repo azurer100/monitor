@@ -142,16 +142,15 @@ class Ps:
         self.__net_cur = copy.copy(net_new)
         
         for add in add_arr:
-            if len(add_arr) == 6:
-                add_arr.append(add_arr[5])
-                add_arr[5] = ""
+            if len(add) < 8:
+                add.insert(5, "")
             
             access_time = time.time()
             ip = add[3][:add[3].rfind(":")]
             port = add[3][add[3].rfind(":")+1:]
             
             pn = add[6].split("/")
-            if not pn:
+            if len(pn) == 2:
                 pid = pn[0]
                 pname = pn[1]
             else:
