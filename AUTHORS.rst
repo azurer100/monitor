@@ -5,7 +5,7 @@ Credits
 Development Lead
 ----------------
 
-* MY <manyiant@163.com>
+* MY <myant@163.com>
 
 Contributors
 ------------
