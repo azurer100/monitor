@@ -34,6 +34,8 @@ class Config:
         self.sl_ip = cf.get("syslog", "ip")
         self.sl_port = cf.getint("syslog", "port")
         
+        self.net_includes = cf.get("net", "includes")
+        
         self.delay = cf.getint("other", "delay")
         
 def start_fs(config, syslog):
@@ -54,7 +56,7 @@ def start_fs(config, syslog):
 def start_ps(config, syslog):
     try:
         ps1 = ps.Ps(syslog)
-        ps1.start(config.delay)
+        ps1.start(config)
     except Exception, e:
         logging.error("linux process monitor stop: " + str(e.args))
         time.sleep(10)

@@ -27,6 +27,7 @@ port = 10514
 
 sql_linux_fs = "INSERT INTO linux_file_monitor_info(`access_time`,`operator_status`,`operator_path`,`process_name`,`exec_user`,`original_user`,`local_ip`,`file_md5`,`container_oid`,`aciton`,`status`) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
 sql_linux_ps = "INSERT INTO linux_process_monitor_info(`access_time`,`process_status`,`file_path`,`pid`,`process_name`,`ppid`,`parent_process_name`,`exec_user`,`original_user`,`local_ip`,`file_md5`,`aciton`) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+sql_linux_net = "INSERT INTO linux_network_monitor_info(`access_time`,`loacl_address`,`foreign_address`,`state`,`protolcol`,`pid`,`progame_name`,`network_status`,`container_oid`,`aciton`) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
 
 class Config:
     def __init__(self, path = "./collector.ini"):
@@ -74,9 +75,13 @@ def linux_fs(ip, syslog):
     
 def linux_ps(ip, syslog):
     items = syslog.split(" ")
-#     access_time, file_path, pid, process_name, ppid, ppname, exec_user, original_user
     return (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(float(items[1]))), items[0], items[2], items[3], items[4], items[5],
             items[6], items[7], items[8], ip, "", "1")
+
+def linux_net(ip, syslog):
+    items = syslog.split(" ")
+    return (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(float(items[0]))), items[1], items[2], items[3], items[4], (items[5] if items[5] != "" else None),
+            items[6], items[7], None, "1")
     
 def main():
     logging.info("starting collector...")
@@ -121,6 +126,10 @@ def main():
                 if (who == "linux_ps"):
                     param1 = linux_ps(addr[0], syslog_msg)
                     curs.execute(sql_linux_ps, param1)
+                    
+                if (who == "linux_net"):
+                    param2 = linux_net(addr[0], syslog_msg)
+                    curs.execute(sql_linux_net, param2)
                     
                 logging.info("syslog: %s" % syslog_msg)
             except socket.error:

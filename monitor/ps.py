@@ -20,19 +20,23 @@ logging.basicConfig(level=logging.DEBUG)
 
 class Ps:
     WHO = 'linux_ps'
+    WHO_NET = 'linux_net'
     
     def __init__(self, syslog):
-        logging.info("linux file process starting ...")
+        logging.info("linux file process monitor starting ...")
+        logging.info("linux netstat monitor starting ...")
         self.__w_infos = {}
         self.__ps_cur = {}
         self.__ps_new = {}
+        self.__net_cur = {}
         self.syslog = syslog
         
-    def start(self, delay):
+    def start(self, config):
         while 1:
             try:
                 self.__do_process()
-                time.sleep(delay)
+                self.__do_netstat(config.net_includes)
+                time.sleep(config.delay)
             except Exception, e:
                 logging.error("linux process monitor error: " + str(e.args))
     
@@ -111,14 +115,63 @@ class Ps:
             
             log = "stop %s %s %s %s %s %s %s %s" % (access_time, file_path, pid, process_name, ppid, ppname, exec_user, original_user)
             self.syslog.send(Ps.WHO, log)
-
+            
+    def __do_netstat(self, includes):
+        ptn = re.compile("\s+")
+        p1 = Popen(["netstat", "-anp"], stdout=PIPE)
+                
+        output = p1.communicate()[0];del p1
+        processes = output.strip().split("\n")
+        
+        add_arr = []
+        net_new = {}
+        for process in processes[2:]:
+            if process:
+                if process.find("Active UNIX domain soc") != -1:
+                    break
+                infos = ptn.split(process)
+                net_new[infos[3] + "-" + infos[4]] = infos
+        
+        if len(self.__net_cur) != 0:
+            for n_key in net_new:
+                if not self.__net_cur.has_key(n_key):
+                    add_arr.append(net_new[n_key])
+                    
+        logging.debug("current networks count: %d" % len(self.__net_cur))
+        logging.debug("new networks count: %d" % len(net_new))
+        self.__net_cur = copy.copy(net_new)
+        
+        for add in add_arr:
+            if len(add_arr) == 6:
+                add_arr.append(add_arr[5])
+                add_arr[5] = ""
+            
+            access_time = time.time()
+            ip = add[3][:add[3].rfind(":")]
+            port = add[3][add[3].rfind(":")+1:]
+            
+            pn = add[6].split("/")
+            if not pn:
+                pid = pn[0]
+                pname = pn[1]
+            else:
+                pid = ""
+                pname = ""
+            
+            if port in includes.strip().split(","):
+                network_status = 1
+            else:
+                network_status = 2
+            
+            log = "%s %s %s %s %s %s %s %s" % (access_time, add[3], add[4], add[5], add[0], pid, pname, network_status)
+            self.syslog.send(Ps.WHO_NET, log)
+            
 def main():
     try:
-        ps = Ps()
-        ps.start(3)
+        ps = Ps(1)
+        ps.start(10)
     except Exception, e:
         logging.error("linux process monitor stop: " + str(e.args))
-        main()
  
 if __name__ == '__main__':
     main()
