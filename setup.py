@@ -25,7 +25,7 @@ setup(
     long_description=readme + '\n\n' + history,
     author="MY",
     author_email='my@163.com',
-    url='https://github.com/azurer100/monitor',
+    url='',
     packages=[
         'monitor',
     ],
@@ -33,7 +33,7 @@ setup(
                  'monitor'},
     entry_points={
         'console_scripts': [
-            'monitor=monitor.cli:main'
+            'monitor=monitor.monitor:main'
         ]
     },
     include_package_data=True,

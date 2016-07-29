@@ -15,7 +15,7 @@ import ConfigParser, logging, fs, time, ps, threading
 from client import Syslog
 
 logging.basicConfig(level=logging.DEBUG,
-                    filename='../logs/monitor.log',
+                    filename='logs/monitor.log',
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  
                     datefmt='%d %b %Y %H:%M:%S')
 

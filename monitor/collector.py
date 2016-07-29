@@ -18,7 +18,7 @@ import MySQLdb
 from encode import Encode
 
 logging.basicConfig(level=logging.DEBUG,
-                    filename='../logs/collector.log',
+                    filename='logs/collector.log',
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  
                     datefmt='%d %b %Y %H:%M:%S')
 
