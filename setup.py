@@ -38,15 +38,13 @@ setup(
     },
     include_package_data=True,
     install_requires=requirements,
-    license="MIT license",
     zip_safe=False,
     keywords='monitor',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 2.7'
     ],
     test_suite='tests',
     tests_require=test_requirements
