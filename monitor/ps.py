@@ -36,13 +36,13 @@ class Ps:
     def start(self, config):
         while 1:
             try:
-                self.__do_process()
+                self.__do_process(config.ps_excludes)
                 self.__do_netstat(config.net_includes)
                 time.sleep(config.delay)
             except Exception, e:
                 logging.error("linux process monitor error: " + str(e.args))
     
-    def __do_process(self):
+    def __do_process(self, ps_excludes):
         ptn = re.compile("\s+")
         p1 = Popen(["ps", "-efc"], stdout=PIPE)
         p2 = Popen(["w", "-h"], stdout=PIPE)
@@ -64,6 +64,8 @@ class Ps:
             if process:
                 infos = ptn.split(process)
                 if infos[8] in ("w", "ps", "[w]", "[ps]", "/usr/bin/python", "python", "[python]"):
+                    continue
+                if infos[8] in ps_excludes:
                     continue
                 self.__ps_new[infos[1]] = infos
                 
@@ -130,6 +132,8 @@ class Ps:
             file_path = add[8]
             pid = add[1]
             process_name = add[8]
+            if len(add) > 9:
+                process_name = process_name + "\t" + add[9]
             ppid = add[2]
             if self.__ps_cur.has_key(ppid):
                 ppname = self.__ps_cur[ppid][8]

@@ -30,9 +30,11 @@ class Config:
         secs = cf.sections()
         logging.info("config sections: %s" % secs)
         
-        self.fs_path = cf.get("fs", "path")
+        self.fs_path = cf.get("fs", "path").split(",")
         self.sl_ip = cf.get("syslog", "ip")
         self.sl_port = cf.getint("syslog", "port")
+        
+        self.ps_excludes = cf.get("ps", "excludes").split(",")
         
         self.net_includes = cf.get("net", "includes")
         

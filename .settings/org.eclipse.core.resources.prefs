@@ -7,5 +7,6 @@ encoding//monitor/fs.py=utf-8
 encoding//monitor/monitor.py=utf-8
 encoding//monitor/ps.py=utf-8
 encoding//tests/__init__.py=utf-8
+encoding//tests/test_monitor.py=utf-8
 encoding/setup.py=utf-8
 encoding/travis_pypi_setup.py=utf-8
