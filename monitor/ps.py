@@ -67,6 +67,14 @@ class Ps:
                     continue
                 if infos[8] in ps_excludes:
                     continue
+                ps_flag = False
+                for ps_exclude in ps_excludes:
+                    if infos[8].find(ps_exclude) != -1:
+                        ps_flag = True
+                        break
+                if ps_flag:
+                    continue
+                
                 self.__ps_new[infos[1]] = infos
                 
         if len(self.__ps_cur) != 0:
